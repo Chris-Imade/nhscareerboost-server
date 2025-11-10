@@ -30,6 +30,62 @@ const sendZeptoMail = async (emailData) => {
 };
 
 /**
+ * POST /api/payment/create-payment-intent
+ * Create a payment intent for the frontend
+ */
+router.post('/create-payment-intent', async (req, res) => {
+  try {
+    const { amount, currency = 'gbp', customerEmail, customerName, metadata = {} } = req.body;
+
+    // Validate required fields
+    if (!amount || !customerEmail) {
+      return res.status(400).json({
+        success: false,
+        message: 'Amount and customer email are required',
+      });
+    }
+
+    // Validate amount (must be positive integer in smallest currency unit)
+    if (typeof amount !== 'number' || amount <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Amount must be a positive number',
+      });
+    }
+
+    // Create payment intent
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: Math.round(amount), // Ensure it's an integer
+      currency: currency.toLowerCase(),
+      receipt_email: customerEmail,
+      metadata: {
+        customerName: customerName || '',
+        ...metadata,
+      },
+      automatic_payment_methods: {
+        enabled: true,
+      },
+    });
+
+    console.log(`💳 Payment intent created: ${paymentIntent.id} for ${customerEmail}`);
+
+    // Return client secret to frontend
+    res.json({
+      success: true,
+      clientSecret: paymentIntent.client_secret,
+      paymentIntentId: paymentIntent.id,
+    });
+  } catch (error) {
+    console.error('❌ Error creating payment intent:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to create payment intent',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined,
+    });
+  }
+});
+
+/**
  * POST /api/payment/webhook
  * Handle Stripe webhook events
  */

@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NHS Career Boost - Payment</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #005EB8 0%, #003087 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .payment-container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo h1 {
+            color: #005EB8;
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .logo p {
+            color: #768692;
+            font-size: 14px;
+        }
+
+        .subtitle {
+            color: #768692;
+            margin-bottom: 30px;
+            font-size: 16px;
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #231f20;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #d8dde6;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #005EB8;
+        }
+
+        #card-element {
+            padding: 12px 16px;
+            border: 2px solid #d8dde6;
+            border-radius: 8px;
+            background: white;
+        }
+
+        #card-element.StripeElement--focus {
+            border-color: #005EB8;
+        }
+
+        #card-errors {
+            color: #da291c;
+            margin-top: 8px;
+            font-size: 14px;
+            min-height: 20px;
+        }
+
+        .amount-display {
+            background: #f0f4f5;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            text-align: center;
+            border: 2px solid #d8dde6;
+        }
+
+        .amount-label {
+            color: #768692;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+
+        .amount-value {
+            color: #005EB8;
+            font-size: 36px;
+            font-weight: bold;
+        }
+
+        button {
+            width: 100%;
+            padding: 16px;
+            background: #005EB8;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+
+        button:hover:not(:disabled) {
+            background: #003087;
+            transform: translateY(-2px);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .success-message {
+            display: none;
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .success-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+
+        .success-message h2 {
+            color: #007f3b;
+            margin-bottom: 10px;
+            font-size: 24px;
+        }
+
+        .success-message p {
+            color: #768692;
+            line-height: 1.6;
+        }
+
+        .secure-badge {
+            text-align: center;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #d8dde6;
+        }
+
+        .secure-badge p {
+            color: #768692;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .lock-icon {
+            color: #007f3b;
+        }
+    </style>
+</head>
+<body>
+    <div class="payment-container">
+        <div id="payment-form-container">
+            <div class="logo">
+                <h1>NHS Career Boost</h1>
+                <p>Professional Development Service</p>
+            </div>
+
+            <div class="amount-display">
+                <div class="amount-label">Total Amount</div>
+                <div class="amount-value">£<span id="display-amount">99.00</span></div>
+            </div>
+
+            <form id="payment-form">
+                <div class="form-group">
+                    <label for="name">Full Name *</label>
+                    <input type="text" id="name" name="name" required placeholder="John Smith" autocomplete="name">
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email Address *</label>
+                    <input type="email" id="email" name="email" required placeholder="john@example.com" autocomplete="email">
+                </div>
+
+                <div class="form-group">
+                    <label for="card-element">Card Details *</label>
+                    <div id="card-element"></div>
+                    <div id="card-errors"></div>
+                </div>
+
+                <button type="submit" id="submit-button">
+                    <span id="button-text">Complete Payment</span>
+                    <div class="spinner" id="spinner"></div>
+                </button>
+            </form>
+
+            <div class="secure-badge">
+                <p>
+                    <span class="lock-icon">🔒</span>
+                    Secure payment powered by Stripe
+                </p>
+            </div>
+        </div>
+
+        <div class="success-message" id="success-message">
+            <div class="success-icon">✅</div>
+            <h2>Payment Successful!</h2>
+            <p>Thank you for your payment. A confirmation email has been sent to your email address.</p>
+            <p style="margin-top: 20px; font-size: 14px;">You can now close this window.</p>
+        </div>
+    </div>
+
+    <!-- Stripe.js -->
+    <script src="https://js.stripe.com/v3/"></script>
+    
+    <script>
+        // ============================================
+        // CONFIGURATION - UPDATE THESE VALUES
+        // ============================================
+        
+        // TODO: Replace with your Stripe Publishable Key (starts with pk_live_ or pk_test_)
+        const STRIPE_PUBLISHABLE_KEY = 'pk_live_YOUR_PUBLISHABLE_KEY_HERE';
+        
+        // TODO: Replace with your backend server URL
+        const API_URL = 'https://your-server-domain.com';
+        // For local testing: 'http://localhost:3000'
+        
+        // Payment amount in pence (£99.00 = 9900 pence)
+        const PAYMENT_AMOUNT = 9900;
+        
+        // ============================================
+        // STRIPE INITIALIZATION
+        // ============================================
+        
+        const stripe = Stripe(STRIPE_PUBLISHABLE_KEY);
+        const elements = stripe.elements();
+        
+        // Create card element with NHS-themed styling
+        const cardElement = elements.create('card', {
+            style: {
+                base: {
+                    fontSize: '16px',
+                    color: '#231f20',
+                    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                    '::placeholder': {
+                        color: '#768692',
+                    },
+                },
+                invalid: {
+                    color: '#da291c',
+                    iconColor: '#da291c',
+                },
+            },
+        });
+        
+        cardElement.mount('#card-element');
+        
+        // Handle real-time validation errors from card element
+        cardElement.on('change', (event) => {
+            const displayError = document.getElementById('card-errors');
+            if (event.error) {
+                displayError.textContent = event.error.message;
+            } else {
+                displayError.textContent = '';
+            }
+        });
+        
+        // ============================================
+        // FORM SUBMISSION HANDLER
+        // ============================================
+        
+        const form = document.getElementById('payment-form');
+        const submitButton = document.getElementById('submit-button');
+        const buttonText = document.getElementById('button-text');
+        const spinner = document.getElementById('spinner');
+        
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            
+            // Disable form and show loading state
+            setLoading(true);
+            
+            // Get customer details from form
+            const name = document.getElementById('name').value.trim();
+            const email = document.getElementById('email').value.trim();
+            
+            try {
+                // Step 1: Create Payment Intent on your server
+                console.log('Creating payment intent...');
+                const response = await fetch(`${API_URL}/api/payment/create-payment-intent`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        amount: PAYMENT_AMOUNT,
+                        currency: 'gbp',
+                        customerEmail: email,
+                        customerName: name,
+                        metadata: {
+                            service: 'NHS Career Boost',
+                            timestamp: new Date().toISOString(),
+                        },
+                    }),
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (!data.success) {
+                    throw new Error(data.message || 'Failed to create payment intent');
+                }
+                
+                console.log('Payment intent created:', data.paymentIntentId);
+                
+                // Step 2: Confirm the payment with Stripe
+                console.log('Confirming payment...');
+                const { error, paymentIntent } = await stripe.confirmCardPayment(
+                    data.clientSecret,
+                    {
+                        payment_method: {
+                            card: cardElement,
+                            billing_details: {
+                                name: name,
+                                email: email,
+                            },
+                        },
+                    }
+                );
+                
+                if (error) {
+                    // Payment failed - show error to customer
+                    console.error('Payment error:', error);
+                    showError(error.message);
+                    setLoading(false);
+                } else if (paymentIntent.status === 'succeeded') {
+                    // Payment succeeded!
+                    console.log('Payment successful:', paymentIntent.id);
+                    showSuccess();
+                }
+                
+            } catch (error) {
+                console.error('Error:', error);
+                showError(error.message || 'An unexpected error occurred. Please try again.');
+                setLoading(false);
+            }
+        });
+        
+        // ============================================
+        // HELPER FUNCTIONS
+        // ============================================
+        
+        function setLoading(isLoading) {
+            submitButton.disabled = isLoading;
+            if (isLoading) {
+                buttonText.style.display = 'none';
+                spinner.style.display = 'block';
+            } else {
+                buttonText.style.display = 'block';
+                spinner.style.display = 'none';
+            }
+        }
+        
+        function showError(message) {
+            const errorElement = document.getElementById('card-errors');
+            errorElement.textContent = message;
+            
+            // Scroll to error
+            errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        
+        function showSuccess() {
+            // Hide form and show success message
+            document.getElementById('payment-form-container').style.display = 'none';
+            document.getElementById('success-message').style.display = 'block';
+            
+            // Optional: Redirect after 5 seconds
+            // setTimeout(() => {
+            //     window.location.href = '/thank-you';
+            // }, 5000);
+        }
+        
+        // Update display amount
+        document.getElementById('display-amount').textContent = (PAYMENT_AMOUNT / 100).toFixed(2);
+    </script>
+</body>
+</html>

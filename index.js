@@ -87,6 +87,9 @@ app.get('/health', (req, res) => {
 // Contact form route with rate limiting
 app.use('/api/contact', contactLimiter, contactRoute);
 
+// Payment route (excluding webhook which is already mounted)
+app.use('/api/payment', paymentRoute);
+
 // Root endpoint
 app.get('/', (req, res) => {
   res.status(200).json({
@@ -95,6 +98,7 @@ app.get('/', (req, res) => {
     endpoints: {
       health: 'GET /health',
       contact: 'POST /api/contact',
+      createPayment: 'POST /api/payment/create-payment-intent',
       webhook: 'POST /api/payment/webhook',
     },
   });
