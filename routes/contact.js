@@ -54,6 +54,27 @@ const contactValidation = [
     .trim()
     .isLength({ max: 2000 })
     .withMessage('Message must not exceed 2000 characters'),
+  body('appointmentDate')
+    .trim()
+    .notEmpty()
+    .withMessage('Appointment date is required')
+    .matches(/^\d{4}-\d{2}-\d{2}$/)
+    .withMessage('Appointment date must be in YYYY-MM-DD format')
+    .custom((value) => {
+      const date = new Date(value);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (date < today) {
+        throw new Error('Appointment date cannot be in the past');
+      }
+      return true;
+    }),
+  body('appointmentTime')
+    .trim()
+    .notEmpty()
+    .withMessage('Appointment time is required')
+    .matches(/^([01]\d|2[0-3]):([0-5]\d)$/)
+    .withMessage('Appointment time must be in HH:MM format (24-hour)'),
 ];
 
 /**
@@ -74,10 +95,10 @@ router.post('/', contactValidation, async (req, res) => {
       });
     }
 
-    const { name, email, phone, service, message } = req.body;
+    const { name, email, phone, service, message, appointmentDate, appointmentTime } = req.body;
     
     // Prepare email data
-    const formData = { name, email, phone, service, message };
+    const formData = { name, email, phone, service, message, appointmentDate, appointmentTime };
 
     // 1. Send confirmation email to client
     const clientEmail = clientConfirmationTemplate(formData);

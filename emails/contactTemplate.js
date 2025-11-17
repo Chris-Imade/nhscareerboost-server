@@ -4,7 +4,15 @@
 
 // Email sent to the client confirming their inquiry
 const clientConfirmationTemplate = (data) => {
-  const { name, email, phone, service, message } = data;
+  const { name, email, phone, service, message, appointmentDate, appointmentTime } = data;
+  
+  // Format appointment date for display
+  const formattedDate = appointmentDate ? new Date(appointmentDate).toLocaleDateString('en-GB', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  }) : null;
   
   return {
     subject: 'Thank You for Contacting NHS Career Boost',
@@ -29,12 +37,19 @@ const clientConfirmationTemplate = (data) => {
           </div>
           <div class="content">
             <h2>Thank You, ${name}!</h2>
-            <p>We've received your inquiry and will get back to you shortly.</p>
+            <p>We've received your consultation booking request and will confirm your appointment shortly.</p>
             
             <div class="info-box">
-              <p><span class="label">Service Requested:</span> ${service}</p>
+              <p><span class="label">Service:</span> ${service}</p>
+              ${appointmentDate ? `<p><span class="label">Preferred Date:</span> ${formattedDate}</p>` : ''}
+              ${appointmentTime ? `<p><span class="label">Preferred Time:</span> ${appointmentTime} (UK Time)</p>` : ''}
               ${phone ? `<p><span class="label">Contact Phone:</span> ${phone}</p>` : ''}
-              ${message ? `<p><span class="label">Your Message:</span><br/>${message}</p>` : ''}
+              ${message ? `<p><span class="label">Additional Notes:</span><br/>${message}</p>` : ''}
+            </div>
+            
+            <div style="background-color: #e8f4f8; padding: 15px; margin: 20px 0; border-radius: 5px;">
+              <p style="margin: 0;"><strong>📅 What's Next?</strong></p>
+              <p style="margin: 10px 0 0 0;">We'll send you the meeting details and calendar invite 24 hours before your scheduled appointment.</p>
             </div>
             
             <p>Our team typically responds within 24 hours during business days.</p>
@@ -54,14 +69,16 @@ const clientConfirmationTemplate = (data) => {
     text: `
 Dear ${name},
 
-Thank you for contacting NHS Career Boost!
+Thank you for booking a consultation with NHS Career Boost!
 
-We've received your inquiry with the following details:
-- Service Requested: ${service}
+We've received your booking request with the following details:
+- Service: ${service}
+${appointmentDate ? `- Preferred Date: ${formattedDate}` : ''}
+${appointmentTime ? `- Preferred Time: ${appointmentTime} (UK Time)` : ''}
 ${phone ? `- Contact Phone: ${phone}` : ''}
-${message ? `- Your Message: ${message}` : ''}
+${message ? `- Additional Notes: ${message}` : ''}
 
-Our team will review your request and get back to you within 24 hours during business days.
+We'll send you the meeting details and calendar invite 24 hours before your scheduled appointment.
 
 If you have any urgent questions, please contact us at daniel@nhscareerboost.co.uk
 
@@ -77,11 +94,19 @@ This email was sent to ${email}
 
 // Email sent to admin with full form details
 const adminNotificationTemplate = (data) => {
-  const { name, email, phone, service, message } = data;
+  const { name, email, phone, service, message, appointmentDate, appointmentTime } = data;
   const timestamp = new Date().toLocaleString('en-GB', { timeZone: 'Europe/London' });
   
+  // Format appointment date for display
+  const formattedDate = appointmentDate ? new Date(appointmentDate).toLocaleDateString('en-GB', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  }) : null;
+  
   return {
-    subject: `New Contact Form Submission - ${service}`,
+    subject: `New Consultation Booking - ${service}${appointmentDate ? ` - ${appointmentDate}` : ''}`,
     html: `
       <!DOCTYPE html>
       <html>
@@ -95,14 +120,22 @@ const adminNotificationTemplate = (data) => {
           .label { font-weight: bold; color: #d32f2f; display: inline-block; width: 150px; }
           .value { display: inline-block; }
           .message-box { background-color: #f5f5f5; padding: 15px; margin: 15px 0; border-radius: 5px; }
+          .appointment-highlight { background-color: #fff3cd; padding: 20px; margin: 20px 0; border-left: 5px solid #ffc107; border-radius: 5px; }
         </style>
       </head>
       <body>
         <div class="container">
           <div class="header">
-            <h1>🔔 New Contact Form Submission</h1>
+            <h1>🔔 New Consultation Booking</h1>
           </div>
           <div class="content">
+            ${appointmentDate && appointmentTime ? `
+            <div class="appointment-highlight">
+              <h3 style="margin-top: 0; color: #856404;">📅 Scheduled Appointment</h3>
+              <p style="font-size: 18px; margin: 10px 0;"><strong>Date:</strong> ${formattedDate}</p>
+              <p style="font-size: 18px; margin: 10px 0;"><strong>Time:</strong> ${appointmentTime} (UK Time)</p>
+            </div>
+            ` : ''}
             <div class="info-row">
               <span class="label">Submitted:</span>
               <span class="value">${timestamp}</span>
@@ -123,6 +156,18 @@ const adminNotificationTemplate = (data) => {
               <span class="label">Service:</span>
               <span class="value"><strong>${service}</strong></span>
             </div>
+            ${appointmentDate ? `
+            <div class="info-row">
+              <span class="label">Appointment Date:</span>
+              <span class="value"><strong>${formattedDate}</strong></span>
+            </div>
+            ` : ''}
+            ${appointmentTime ? `
+            <div class="info-row">
+              <span class="label">Appointment Time:</span>
+              <span class="value"><strong>${appointmentTime} (UK Time)</strong></span>
+            </div>
+            ` : ''}
             
             ${message ? `
             <div class="message-box">
@@ -140,14 +185,16 @@ const adminNotificationTemplate = (data) => {
       </html>
     `,
     text: `
-NEW CONTACT FORM SUBMISSION
-===========================
+NEW CONSULTATION BOOKING
+========================
 
 Submitted: ${timestamp}
 Name: ${name}
 Email: ${email}
 Phone: ${phone || 'Not provided'}
 Service: ${service}
+${appointmentDate ? `Appointment Date: ${formattedDate}` : ''}
+${appointmentTime ? `Appointment Time: ${appointmentTime} (UK Time)` : ''}
 
 ${message ? `Message:\n${message}` : 'No message provided'}
 
